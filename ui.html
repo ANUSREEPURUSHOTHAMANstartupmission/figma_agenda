@@ -1,0 +1,110 @@
+<!-- ui.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figma Plugin UI</title>
+</head>
+<body>
+  <!-- Your UI content goes here -->
+  <label for="venueDropdown">Select Venue:</label>
+  <select id="venueDropdown">
+    <option value="">Select a Venue</option>
+  </select>
+
+  <label for="dayDropdown">Select Day:</label>
+  <select id="dayDropdown">
+    <option value="">Select a Day</option>
+  </select>
+
+  <button onclick="getDataForSelectedVenueAndDay()">Submit</button>
+
+  <script>
+    // Function to send a message to the Figma plugin with selected venue and day
+    function getDataForSelectedVenueAndDay() {
+      const venueDropdown = document.getElementById('venueDropdown');
+      const selectedVenue = venueDropdown.value;
+
+      const dayDropdown = document.getElementById('dayDropdown');
+      const selectedDay = dayDropdown.value;
+
+      if (selectedVenue && selectedDay) {
+        // Replace with your API endpoint and parameters based on the selected venue and day
+        const apiUrl = `https://events.startupmission.in/api/event/huddle-global-2023/agenda/venue?venue=${selectedVenue}&day=${selectedDay}`;
+        parent.postMessage({ pluginMessage: { type: 'getData', url: apiUrl } }, '*');
+      } else {
+        console.error('Please select a venue and a day.');
+      }
+    }
+
+    // Function to fetch venues from the API and populate the venue dropdown
+    async function fetchVenues() {
+      const apiUrl = 'https://events.startupmission.in/api/event/huddle-global-2023/agenda/venue';
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        const venueDropdown = document.getElementById('venueDropdown');
+
+        // Extract unique venues from the data
+        const uniqueVenues = new Set();
+        Object.values(data.agenda['Nov 16, 2023']).forEach((events) => {
+          events.forEach((event) => {
+            if (event.venue) {
+              // Check if venue is defined and not null
+              if (Array.isArray(event.venue)) {
+                event.venue.forEach((venue) => {
+                  uniqueVenues.add(venue);
+                });
+              } else {
+                uniqueVenues.add(event.venue);
+              }
+            }
+          });
+        });
+
+        // Populate venue dropdown with unique venues
+        uniqueVenues.forEach((venue) => {
+          const option = document.createElement('option');
+          option.value = venue;
+          option.text = venue;
+          venueDropdown.add(option);
+        });
+
+        // Fetch days when venues are loaded
+        fetchDays();
+      } catch (error) {
+        console.error('Error fetching venues:', error);
+      }
+    }
+
+    // Function to fetch days from the API and populate the day dropdown
+    async function fetchDays() {
+      const apiUrl = 'https://events.startupmission.in/api/event/huddle-global-2023/agenda/days';
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        const dayDropdown = document.getElementById('dayDropdown');
+
+        // Extract days from the data
+        const days = Object.keys(data.agenda['Nov 16, 2023']);
+
+        // Populate day dropdown with days
+        days.forEach((day) => {
+          const option = document.createElement('option');
+          option.value = day;
+          option.text = day;
+          dayDropdown.add(option);
+        });
+      } catch (error) {
+        console.error('Error fetching days:', error);
+      }
+    }
+
+    // Fetch venues when the page loads
+    fetchVenues();
+  </script>
+</body>
+</html>
